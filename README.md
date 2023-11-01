@@ -2,6 +2,6 @@
 # :accessibility:: Conexões Sensor-Módulo
 
 - `VIN`: 3V
-- `GND`: GND do lado contrário ao 5V
+- `GND`: GND 
 - `SCL`: 22
 - `SDA`: 21
