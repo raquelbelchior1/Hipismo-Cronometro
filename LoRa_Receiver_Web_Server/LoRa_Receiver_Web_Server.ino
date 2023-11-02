@@ -235,9 +235,9 @@ void setup()
   server.on("/rssi", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", String(rssi).c_str());
   });
-  server.on("/winter", HTTP_GET, [](AsyncWebServerRequest *request){
+ /* server.on("/winter", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/winter.jpg", "image/jpg");
-  });
+  });*/
   // Start server
   server.begin();
   
@@ -303,12 +303,20 @@ void loop()
         display.setCursor(0, OLED_LINE2);
         if(minutos<10){
           display.print("0");
+          minutos2=String( "0" + String(minutos));
         }
+        else{
+          minutos2=String(minutos);
+          }
         display.print(minutos);
         display.print(":");
         if(segundos<10){
           display.print("0");
+          segundos2=String("0"+ String(segundos));
         }
+        else{
+          segundos2=String(segundos);
+          }
         display.print(segundos);
         display.print(":");
         display.print(centesimos);
