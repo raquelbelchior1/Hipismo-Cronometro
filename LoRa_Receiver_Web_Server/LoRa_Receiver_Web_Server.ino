@@ -6,10 +6,14 @@
 #include <Adafruit_SSD1306.h>
 #include <iostream>
 #include <string>
+#include <ESPmDNS.h>
+
 
 // Import Wi-Fi library
 #include <WiFi.h>
 #include "ESPAsyncWebServer.h"
+#include <AsyncTCP.h>
+
 // Libraries to get time from NTP Server
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -45,29 +49,18 @@
 /* Definicoes gerais */
 #define DEBUG_SERIAL_BAUDRATE    115200
 
-// Replace with your network credentials
-const char* ssid     = "raquel";
-const char* password = "izbq4733";
+// Replace with ESP32 network credentials
+const char* ssid     = "ESP32-WIFI";
+const char* password = "testando";
 
 // Initialize variables to get and save LoRa data
 int rssi;
-//String loRaMessage;
-//String deltaTempo;
 String minutos2="";
 String segundos2="";
 String centesimos2="";
 
-//String readingID;
-
-// Variables to save date and time
-String formattedDate;
-String day;
-String hour;
-String timestamp;
-
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -86,17 +79,13 @@ String processor(const String& var){
   else if (var == "CENTESIMOS"){
     return centesimos2;
   }
-  else if(var == "TIMESTAMP"){
-    return timestamp;
-    
-  }
-  else if (var == "RRSI"){
-    return String(rssi);
-  }
   return String();
 }
 
 /* Local prototypes */
+bool display_ok=false;
+bool wifi_connected=false;
+bool status_init=false;  
 void display_init(void);
 bool init_comunicacao_lora(void);
 bool cavaloJaPassou = false; //Indica se o cronometro começou a contar ou não
@@ -131,7 +120,7 @@ void display_init(void)
 */
 bool init_comunicacao_lora(void)
 {
-    bool status_init = false;
+    status_init = false;
     Serial.println("[LoRa Receiver] Tentando iniciar comunicacao com o radio LoRa...");
     SPI.begin(SCK_LORA, MISO_LORA, MOSI_LORA, SS_PIN_LORA);
     LoRa.setPins(SS_PIN_LORA, RESET_PIN_LORA, LORA_DEFAULT_DIO0_PIN);
@@ -152,71 +141,51 @@ bool init_comunicacao_lora(void)
  
     return status_init;
 }
-void connectWiFi(){
-  // Connect to Wi-Fi network with SSID and password
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  // Print local IP address and start web server
-  Serial.println("");
-  Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
 
-// Function to get date and time from NTPClient
-void getTimeStamp() {
-  while(!timeClient.update()) {
-    timeClient.forceUpdate();
-  }
-  // The formattedDate comes with the following format:
-  // 2018-05-28T16:00:13Z
-  // We need to extract date and time
-  formattedDate = timeClient.getFormattedDate();
-  Serial.println(formattedDate);
-
-  // Extract date
-  int splitT = formattedDate.indexOf("T");
-  day = formattedDate.substring(0, splitT);
-  Serial.println(day);
-  // Extract time
-  hour = formattedDate.substring(splitT+1, formattedDate.length()-1);
-  Serial.println(hour);
-  timestamp = day + " " + hour;
-}
- 
 /* Funcao de setup */
 void setup() 
 {
-    connectWiFi();
-    
-    /* Configuracao da I²C para o display OLED */
-    Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
- 
-    /* Display init */
-    display_init();
- 
-    /* Print message telling to wait */
-    display.clearDisplay();    
-    display.setCursor(0, OLED_LINE1);
-    display.print("Aguarde...");
-    display.display();
-     
     Serial.begin(DEBUG_SERIAL_BAUDRATE);
     while (!Serial);
  
     /* Tenta, até obter sucesso, comunicacao com o chip LoRa */
     while(init_comunicacao_lora() == false); 
+
+    if(status_init){
+        /* Configuracao da I²C para o display OLED */
+      Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
    
+      /* Display init */
+      display_init();
+   
+      /* Print message telling to wait */
+      display.clearDisplay();    
+      display.setCursor(0, OLED_LINE1);
+      display.print("Aguarde...");
+      display.display();
+      display_ok=true;
+        if(display_ok){
+        WiFi.softAP(ssid, password); //Inicia o ponto de acesso
+        Serial.print("Se conectando a: "); //Imprime mensagem sobre o nome do ponto de acesso
+        Serial.println(ssid);
+        IPAddress ip = WiFi.softAPIP(); //Endereço de IP
+        
+        delay(500);
+
+        Serial.print("Endereço de IP: "); //Imprime o endereço de IP
+        Serial.println(ip);
+        Serial.println("Servidor online"); //Imprime a mensagem de início
+        wifi_connected=true;}
+        }
    if(!SPIFFS.begin()){
    Serial.println("An Error has occurred while mounting SPIFFS");
    return;
     }
   // Route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/index.html", String(), false, processor);
+  });
+  
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.html", String(), false, processor);
   });
@@ -229,45 +198,37 @@ void setup()
   server.on("/centesimos2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", centesimos2.c_str());
   });
-  server.on("/timestamp", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", timestamp.c_str());
-  });
-  server.on("/rssi", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", String(rssi).c_str());
-  });
- /* server.on("/winter", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/winter.jpg", "image/jpg");
-  });*/
   // Start server
   server.begin();
-  
-  // Initialize a NTPClient to get time
-  timeClient.begin();
-  // Set offset time in seconds to adjust for your timezone, for example:
-  // GMT +1 = 3600
-  // GMT +8 = 28800
-  // GMT -1 = -3600
-  // GMT 0 = 0
-  timeClient.setTimeOffset(0);      
+  delay(500);
+
+  if(MDNS.begin("esp32")){
+    Serial.println("MNDS responder started");
+    }   
 }
  
 /* Programa principal */
-void loop() 
-{
-    
+void loop() {
     if(!cavaloJaPassou && !pareiCronometro){
       display.clearDisplay();    
       display.setCursor(0, OLED_LINE1);
       display.print("Cronometro");
       display.setCursor(0, OLED_LINE2);
       display.print("00:00:00");
+      display.setCursor(0, OLED_LINE3);
+      display.print("Acesse o cronometro:");
+      display.setCursor(0, OLED_LINE4);
+      display.print(WiFi.softAPIP());
+
       display.display();
     }
     /* Verifica se chegou alguma informação do tamanho esperado */
       int packetSize = LoRa.parsePacket();
-      if (packetSize) {
-        //getLoRaData();
-        getTimeStamp();
+      delay(1);
+
+      Serial.println(packetSize);
+
+      if (packetSize!=0) {
         // received a packet
         // read packet
         while (LoRa.available()) {
@@ -320,12 +281,15 @@ void loop()
         display.print(segundos);
         display.print(":");
         display.print(centesimos);
+        display.setCursor(0, OLED_LINE3);
+        display.print("Acesse o cronometro:");
+        display.setCursor(0, OLED_LINE4);
+        display.print(WiFi.softAPIP());
         display.display();
         minutos2=String(minutos);
         segundos2=String(segundos);
-        centesimos2=String(centesimos);  
+        centesimos2=String(centesimos);
       }
-     
-      
-        
+
+
 }
