@@ -185,10 +185,6 @@ void setup()
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.html", String(), false, processor);
   });
-  
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/index.html", String(), false, processor);
-  });
   server.on("/minutos2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", minutos2.c_str());
   });
@@ -197,6 +193,15 @@ void setup()
   });
   server.on("/centesimos2", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/plain", centesimos2.c_str());
+  });
+    server.on("/ime", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/ime.png", "image/png");
+  });
+    server.on("/cavalaria", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/cavalaria.png", "image/png");
+  });
+    server.on("/cavalo", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/cavalo.png", "image/png");
   });
   // Start server
   server.begin();

@@ -1,54 +1,93 @@
 <!DOCTYPE HTML>
-<html lang=‘pt-BR’>
+<html lang="pt-BR">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0.01" />
+  <!--<meta http-equiv="refresh" content="0.01" />-->
   <link rel="icon" href="data:,">
-  <title>CRONOMETRO</title>
+  <title>CRONÔMETRO</title>
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
   <style>
     body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      color: black;
       font-family: Arial, Helvetica, sans-serif;
       text-align: center;
-    }
-    header {
-      margin: 0;
-      padding-top: 5vh;
-      padding-bottom: 5vh;
-      overflow: hidden;
-      /*background-image: url(winter);*/
-      background-size: cover;
-      color: black;
+      background-color: #beb180;
+      position: relative;
     }
     h2 {
-      font-size: 2.0rem;
+      font-size: 50px;
+      border: 15px ridge red;
+      width: fit-content;
+      padding: 15px;
+      margin-top: 20px;
     }
-    p { font-size: 1.2rem; }
-    .readings { font-size: 48px; }
-  </style>
+    p {
+      font-size: 40px;
+      border: 15px double gold;
+    }
+    .readings {
+      font-size: 120px;
+      position: relative;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    .logo{
+      position: relative; 
+      align-content: center;
+      background-image: url(cavalo);
+      background-size: cover;
+      height: 200px;
+      width: 200px;
+      margin-top: 7vh;
+    }
+    .brasao-cav {
+      position: absolute;
+      top: 3vh;
+      left: 3vh;
+      background-image: url(cavalaria);
+      background-size: cover;
+      height: 90px;
+      width: 150px;
+    }
+    .brasao-ime {
+      position: absolute;
+      top: 3vh;
+      right: 3vh;
+      background-image: url(ime);
+      background-size:cover;
+      height: 120px;
+      width: 90px;
+    }
+
+
+</style>
 </head>
 <body>
-  <header>
-    <i class='fas fa-horse-head' style='font-size:64px;color:rgb(61, 42, 0)'></i>
-    <h2>Cronometro para treinamentos de equitacao</h2>
-    <p><strong>Last received packet:<br/><span id="timestamp">%TIMESTAMP%</span></strong></p>
-    <p>LoRa RSSI: <span id="rssi">%RSSI%</span></p>
-  </header>
+
+    <div>  
+        <div class="brasao-cav"></div>
+        <div class="brasao-ime"></div>
+    </div>
+    <div class="logo"></div>
+    <h2>Cronômetro para hipismo</h2>
 <main>
-    <i class="fa fa-clock-o" style="font-size:64px; color:rgb(197, 58, 58)"></i> 
   <p>
-    Tempo: <span id="minutos2" class="readings">%MINUTOS%</span>:<span id="segundos2" class="readings">%SEGUNDOS%</span>:<span id="centesimos2" class="readings">%CENTESIMOS%</span>
+    TEMPO: <span id="minutos" class="readings">%MINUTOS%</span>:<span id="segundos" class="readings">%SEGUNDOS%</span>:<span id="centesimos" class="readings">%CENTESIMOS%</span>
   </p>
 
 </main>
 <script>
-setInterval(updateValues, 10000, "minutos2");
-setInterval(updateValues, 10000, "segundos2");
-setInterval(updateValues, 10000, "centesimos2");
-setInterval(updateValues, 10000, "rssi");
-setInterval(updateValues, 10000, "timestamp");
-
+setInterval(updateValues, 1000, "minutos");
+setInterval(updateValues, 1000, "segundos");
+setInterval(updateValues, 1000, "centesimos");
 
 function updateValues(value) {
   var xhttp = new XMLHttpRequest();
