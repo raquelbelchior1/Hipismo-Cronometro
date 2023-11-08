@@ -107,7 +107,7 @@ void loop(void)
     LoRa.beginPacket();//Esta linha inicia a transmissão de um pacote de dados pelo módulo LoRa. Ela sinaliza que o microcontrolador está prestes a enviar dados para outro dispositivo ou nó na rede LoRa.
     LoRa.print("Start");
     LoRa.endPacket();//Esta linha encerra o pacote de dados LoRa, indicando que todos os dados foram transmitidos e o pacote está pronto para ser enviado para o receptor LoRa.
-    delay(1000);
+    delay(5000);
   }
 
   Serial.println();
